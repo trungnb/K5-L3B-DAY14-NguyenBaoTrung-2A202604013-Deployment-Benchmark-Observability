@@ -263,9 +263,15 @@ Total messages: 10
 
 ## Part 3: Cloud Deployment (CP6 — Deploy Agent Part 6)
 
-### Exercise 3.1 / 3.2: Deploy trên nền tảng chính
-- **Public URL:** *(UNVERIFIED — chờ deploy thư mục `06-lab-complete/` lên Railway hoặc Render kèm Redis)*
-- **Screenshots:** `screenshots/dashboard.png`, `screenshots/running.png`, `screenshots/test.png` *(chờ chụp sau khi deploy)*
+### Exercise 3.1 / 3.2: Deploy trên nền tảng chính (Render)
+- **Platform:** Render (`Singapore (Southeast Asia)`, Free plan) — Web Service `k5-day14-agent` (Docker, Root Directory `06-lab-complete`, Health Check Path `/health`) + Key Value Redis `k5-day14-redis` (Valkey 8.1.10, kết nối nội bộ qua `REDIS_URL`).
+- **Public URL:** https://k5-day14-agent-e1jt.onrender.com
+- **Kết quả 4 lệnh tự kiểm CP6 (không lộ key):**
+  - `GET /health` → **`200`** (`{"status":"ok","environment":"production"}`)
+  - `GET /ready` → **`200`** (`{"status":"ready"}`)
+  - `POST /ask` (không có key) → **`401`**
+  - `POST /ask` (có `X-API-Key: $AGENT_API_KEY`) → **`200`** (`{"question":"What is Docker?","answer":"Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!","cost_usd":1.125e-05}`)
+- **Screenshots:** [dashboard.png](screenshots/dashboard.png), [running.png](screenshots/running.png), [test.png](screenshots/test.png) (chi tiết xem [DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ### So sánh `railway.toml` vs `render.yaml`
 
@@ -310,3 +316,15 @@ Kết quả chạy `python check_production_ready.py` (chế độ đầy đủ,
   🎉 PASS 12/12 — PRODUCTION READY! Deploy nào!
 ================================================================
 ```
+
+---
+
+## AI Log (theo `RULES.md` mục 1)
+
+| Mục | Hỏi gì / Dùng AI làm gì | Nhận được gì | Tự kiểm tra & xác minh thực tế |
+|---|---|---|---|
+| **Đọc hiểu & rà soát lưu ý K5** | Tóm tắt yêu cầu Day 14 và đối chiếu các điểm khác biệt của lớp K5 so với `CODE_LAB.md` / `DAY14_DELIVERY_CHECKLIST.md`. | Danh sách 11 lưu ý K5, lịch CP0–CP8, quy định rubric Part 3 & Part 6, cấu trúc file nộp. | Đối chiếu trực tiếp từng file `README.md`, `CHECKPOINTS.md`, `RUBRIC.md`, `RULES.md`, `SUBMISSION.md` và tuân thủ tuyệt đối (không sửa `check_production_ready.py` và `golden_dataset.jsonl`). |
+| **Part 1, 2, 4, 5 (CP1–CP4)** | Hỗ trợ chạy tuần tự các ví dụ mẫu và tổng hợp ghi chép vào `MISSION_ANSWERS.md`. | Lệnh chạy khớp lưu ý K5 (query param, build từ gốc repo, `.env.local`, `/auth/token` `student`/`demo123`, `-p k5-day14-scaling`, cổng 8080 `/chat`). | Tự chạy thực tế tất cả server/container trên máy; mọi số liệu (`1,672.2 MB` vs `265.5 MB`, mã HTTP `401`/`200`/`429`, 3 instance `test_stateless.py`) đều trích từ output thật, đã che JWT token. |
+| **Part 6 — Final Project (CP5)** | Hỗ trợ hoàn thiện các file `TODO` trong `06-lab-complete/` (`config.py`, `redis_client.py`, `auth.py`, `rate_limiter.py`, `cost_guard.py`, `main.py`, `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.env.example`, `railway.toml`, `render.yaml`). | Bản cài đặt dùng `hmac.compare_digest` cho auth, Redis sorted set sliding window cho rate limit, `INCRBYFLOAT` + TTL cho cost guard, `JsonFormatter` cho log JSON, multi-stage `Dockerfile` với `PYTHONUSERBASE` và `exec uvicorn`. | Chạy `python check_production_ready.py` bản đầy đủ có Docker → đạt **`PASS 12/12` (43/43 checks passed, image 321 MB, `docker stop` 0.6s exit 0)** ngay lần chạy đầu. |
+| **Part 3 — Cloud Deployment (CP6)** | Phân tích phương án deploy Render (thủ công vs Blueprint) và hỗ trợ thao tác tạo `k5-day14-redis` + `k5-day14-agent` trên Render Dashboard. | Cấu hình Key Value Free + Web Service Docker (`Root Directory=06-lab-complete`, cùng region `Singapore`, `/health`) tránh bẫy Blueprint ở thư mục con. | Tự chạy 4 lệnh CP6 lên `https://k5-day14-agent-e1jt.onrender.com` xác nhận `200 / 200 / 401 / 200`, chụp 3 ảnh `dashboard.png`, `running.png`, `test.png` (không lộ key). |
+| **Part 7 — Benchmark & Observability (CP7–CP8)** | Hỗ trợ thêm metric `agent_question_length_chars`, sửa `KNOWLEDGE_BASE`, chẩn đoán lỗi `ModuleNotFoundError: No module named 'uvicorn'` trong `production/Dockerfile` (thiếu `ENV PYTHONUSERBASE=/home/agent/.local`), chạy Locust headless + chaos alert và hoàn thiện `BENCHMARK_REPORT.md`. | Bản sửa 1 dòng `PYTHONUSERBASE` cho `production/Dockerfile`, 2 entry `KNOWLEDGE_BASE` cho `jwt` và `hpa`, script giám sát `/api/v1/alerts`. | Tự chạy đủ 10 file JSON trong `reports/` (`eval_v2_fixed.json` đạt `23/23 = 100%`, 0 regression), 2 file CSV Locust (`scale_1_stats.csv`, `scale_3_stats.csv`), `promtool test rules` PASS, 4 ảnh Part 7 (`grafana-dashboard.png`, `jaeger-slow-trace.png`, `jaeger-error-trace.png`, `prometheus-alert-firing.png` với cả 4 alert firing), đối chiếu từng số khớp tuyệt đối với JSON/CSV. |
